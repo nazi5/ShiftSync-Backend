@@ -38,7 +38,8 @@ namespace ShiftSync.Api.Controllers
         [HttpGet("available")]
         public async Task<IActionResult> GetAvailableShifts()
         {
-            var shifts = await _context.Shifts.Where(s => s.Status == shiftStatus.Available).ToListAsync();
+            //var shifts = await _context.Shifts.Where(s => s.Status == shiftStatus.Available).ToListAsync();
+            var shifts = await _context.Shifts.ToListAsync();
             return Ok(shifts);
         }
 
@@ -52,10 +53,11 @@ namespace ShiftSync.Api.Controllers
             {
              return NotFound("Shift Not Found");
             };
-            if(shift.Status != shiftStatus.Available)
+            if (shift.Status != shiftStatus.Available)
             {
                 return BadRequest("Shift is not available for claiming");
-            };
+            }
+            ;
             shift.Status = shiftStatus.Claimed;
             shift.ClaimedAt = DateTime.UtcNow;
             shift.SupervisorId = request.UserId;
@@ -86,12 +88,22 @@ namespace ShiftSync.Api.Controllers
                 ShiftId = shiftId
 
             };
-
+            _context.ShiftLogs.Add(log);
             await _context.SaveChangesAsync();
             return Ok(new { Message = "Log added successfully", Log = log });
         }
 
-        [HttpGet("{shiftId}/close")]
+        [HttpGet("{shiftId}/logs")]
+        public async Task<IActionResult> GetShiftLogs(int shiftId)
+        {
+            var shiftExists = await _context.Shifts.AnyAsync(s => s.Id == shiftId);
+
+            if (!shiftExists) return NotFound("Shift not found.");
+            var logs = await _context.ShiftLogs.Where(log => log.ShiftId == shiftId).OrderBy(l => l.TimeStamp).ToListAsync();
+           return Ok(logs);
+        }
+
+        [HttpPost("{shiftId}/close")]
         public async Task<IActionResult> CloseShift(int shiftId)
         {
             var shift = await _context.Shifts.FindAsync(shiftId);
