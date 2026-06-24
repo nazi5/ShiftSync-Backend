@@ -56,8 +56,7 @@ namespace ShiftSync.Api.Controllers
             if (shift.Status != shiftStatus.Available)
             {
                 return BadRequest("Shift is not available for claiming");
-            }
-            ;
+            };
             shift.Status = shiftStatus.Claimed;
             shift.ClaimedAt = DateTime.UtcNow;
             shift.SupervisorId = request.UserId;
